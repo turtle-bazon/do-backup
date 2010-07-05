@@ -7,4 +7,6 @@
   :components ((:module "src"
 			:components
 			((:file "package")
-			 (:file "do-backup" :depends-on ("package"))))))
+			 (:file "utils" :depends-on ("package"))
+			 (:file "do-backup" :depends-on ("package"
+							 "utils"))))))

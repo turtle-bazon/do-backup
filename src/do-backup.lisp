@@ -40,8 +40,10 @@
 	       values))))
 
 (defun flatten (list)
-  (cond ((or (null list)
-	     (= (length list) 1)) list)
+  (cond ((null list) list)
+	((= 1 (length list)) (if (listp (first list))
+				 (first list)
+				 list))
 	(t (reduce #'(lambda (elt1 elt2)
 		       (cond ((and (listp elt1)
 				   (listp elt2)) (append elt1 elt2))
@@ -61,22 +63,28 @@
 		     (t argument)))
 	   arguments)))
 
-(defun call-action (action &optional file files outputfile)
+(defun call-action (action &optional file files outputstream)
   (let ((program (action-program action))
 	(arguments (substitute-vars (action-arguments action) file files)))
-    (if outputfile
-	(with-open-file (stream outputfile :direction :output)
-	  (run program arguments :output stream))
+    (if outputstream
+	(run program arguments :output outputstream)
 	(run program arguments))))
 
 (defun perform-dynamic-files (dynamic-files actions)
   (dolist (dynamic-file dynamic-files)
-    (let* ((file (getf dynamic-file :dynamic-file))
-	   (actionname (getf dynamic-file :action))
+    (let* ((file (car dynamic-file))
+	   (file-options (cdr dynamic-file))
+	   (actionname (getf file-options :action))
 	   (action (find-action actionname actions))
-	   (saveoutput (getf dynamic-file :saveoutput)))
+	   (saveoutput (getf file-options :saveoutput)))
       (if (not (eq action nil))
-	  (call-action action file nil (if saveoutput file))
+	  (multiple-value-bind (status code)
+	      (if saveoutput
+		  (with-open-file (stream file
+					  :direction :output
+					  :if-exists :supersede)
+		    (call-action action file nil stream))	      
+		  (call-action action file)))
 	  (format t "Null action ~a" actionname)))))
 
 (defun perform-preliminary-backup (files backup-file)
@@ -106,7 +114,7 @@
 	  (mapcar
 	   #'(lambda (filename)
 	       (format nil "~a/~a" directory filename))
-	   (run ;;/strings
+	   (run/strings
 	    "ls"
 	    `("-1" "-t" "-r" ,directory))))))
     (do ((new-length (length backup-list) (- new-length 1))
@@ -140,14 +148,17 @@
       (if dir-created-p
 	  (let ((backup-file (format nil "~a/backuped.tar.bz2" directory)))
 	    (perform-dynamic-files
-	     (get-values :dynamic-file backup)
-	     actions)
+	     (get-values :dynamic-file backup) actions)
 	    (perform-preliminary-backup
-	     (flatten (get-values :file backup))
+	     (mapcar #'(lambda (f)
+			 (car f))
+		     (append
+		      (get-values :file backup)
+		      (get-values :dynamic-file backup)))
 	     backup-file)
 	    (perform-copy-to-dirs
 	     backup-file
-	     (get-by-value :output-directory backup))
+	     (get-values :output-directory backup))
 	    (perform-delete-preliminary-backup directory))
 	  (format t "Directory ~a can't be created~%" directory)))))
 
