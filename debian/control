@@ -8,6 +8,6 @@ Standards-Version: 3.8.2.0
 
 Package: do-bakcup
 Architecture: all
-Depends: ${misc:Depends}, p7zip, coreutils
+Depends: ${misc:Depends}, external-program, external-program-extender, p7zip, coreutils
 Description: BACKUP tool
 

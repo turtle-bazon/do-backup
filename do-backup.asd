@@ -1,12 +1,14 @@
 ;;;; -*- mode: lisp -*-
 
 (defsystem :do-backup
+  :name "do-backup"
+  :author "Azamat S. Kalimoulline <turtle@bazon.ru>"
+  :licence "Lessor Lisp General Public License"
   :version "0.0.1.0"
   :description "Backup system"
-  :depends-on (external-program)
+  :depends-on (external-program
+	       external-program-extender)
   :components ((:module "src"
 			:components
 			((:file "package")
-			 (:file "utils" :depends-on ("package"))
-			 (:file "do-backup" :depends-on ("package"
-							 "utils"))))))
+			 (:file "do-backup" :depends-on ("package"))))))

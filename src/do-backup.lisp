@@ -20,6 +20,9 @@
 (defun action-program (action)
   (first (get-value :program action)))
 
+(defun action-suffix (action)
+  (first (get-value :suffix action)))
+
 (defun action-arguments (action)
   (flatten (get-values :argument action)))
 
@@ -87,11 +90,18 @@
 		  (call-action action file)))
 	  (format t "Null action ~a" actionname)))))
 
-(defun perform-preliminary-backup (files backup-file)
-  (run "tar"
-       `("-cjf"
-	 ,backup-file
-	 ,@files)))
+(defun perform-preliminary-backup (backup actions directory)
+  (let* ((action-name (car (get-value :action backup)))
+	 (action (find-action action-name actions))
+	 (backup-file (format nil "~a/backuped~a" directory
+			      (action-suffix action))))
+    (call-action action backup-file
+		 (mapcar #'(lambda (f)
+			     (car f))
+			 (append
+			  (get-values :file backup)
+			  (get-values :dynamic-file backup))))
+    backup-file))
 
 (defun copy-to-dir (file-copy-from file-copy-to directory)
   (multiple-value-bind (ensured-directory dir-created-p)
@@ -146,16 +156,11 @@
     (multiple-value-bind (directory dir-created-p)
 	(ensure-directories-exist tmp-dir)
       (if dir-created-p
-	  (let ((backup-file (format nil "~a/backuped.tar.bz2" directory)))
-	    (perform-dynamic-files
-	     (get-values :dynamic-file backup) actions)
-	    (perform-preliminary-backup
-	     (mapcar #'(lambda (f)
-			 (car f))
-		     (append
-		      (get-values :file backup)
-		      (get-values :dynamic-file backup)))
-	     backup-file)
+	  (let ((dynamic (perform-dynamic-files
+			  (get-values :dynamic-file backup) actions))
+		(backup-file (perform-preliminary-backup backup
+							 actions
+							 directory)))
 	    (perform-copy-to-dirs
 	     backup-file
 	     (get-values :output-directory backup))
