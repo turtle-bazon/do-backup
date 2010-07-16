@@ -66,12 +66,19 @@
 		     (t argument)))
 	   arguments)))
 
+(defun program-run (program arguments &optional outputstream)
+  (multiple-value-bind (status code)
+      (if outputstream
+	  (run program arguments :output outputstream)
+	  (run program arguments))
+    (if (not (= code 0))
+	(format t "~a, ~a, [~a, ~a]~&" program arguments status code))
+    (values status code)))
+
 (defun call-action (action &optional file files outputstream)
   (let ((program (action-program action))
 	(arguments (substitute-vars (action-arguments action) file files)))
-    (if outputstream
-	(run program arguments :output outputstream)
-	(run program arguments))))
+    (program-run program arguments outputstream)))
 
 (defun perform-dynamic-files (dynamic-files actions)
   (dolist (dynamic-file dynamic-files)
@@ -81,13 +88,12 @@
 	   (action (find-action actionname actions))
 	   (saveoutput (getf file-options :saveoutput)))
       (if (not (eq action nil))
-	  (multiple-value-bind (status code)
-	      (if saveoutput
-		  (with-open-file (stream file
-					  :direction :output
-					  :if-exists :supersede)
-		    (call-action action file nil stream))	      
-		  (call-action action file)))
+	  (if saveoutput
+	      (with-open-file (stream file
+				      :direction :output
+				      :if-exists :supersede)
+		(call-action action file nil stream))	      
+	      (call-action action file))
 	  (format t "Null action ~a" actionname)))))
 
 (defun perform-preliminary-backup (backup actions directory)
@@ -109,9 +115,9 @@
     (if dir-created-p
 	(format t "Created directory ~a.~%" ensured-directory))
     (if ensured-directory
-	(run "cp"
-	     `(,file-copy-from
-	       ,(format nil "~a~a" directory file-copy-to)))
+	(program-run "cp"
+		     `(,file-copy-from
+		       ,(format nil "~a~a" directory file-copy-to)))
 	(format t "Directory ~a can't be accessed.~%" ensured-directory))))
 
 (defun directory-p (filename)
@@ -146,8 +152,8 @@
 	(normalize-directory dir-name backup-length)))))
 
 (defun perform-delete-preliminary-backup (directory)
-  (run "rm"
-       `("-rf" ,directory)))
+  (program-run "rm"
+	       `("-rf" ,directory)))
 
 (defun perform-backup (backup actions)
   (let ((tmp-dir (format nil "/tmp/~a.~a/"
