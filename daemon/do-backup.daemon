@@ -1,7 +1,8 @@
 ;;;; -*- mode: lisp -*-
 
-(asdf:oos 'asdf:load-op 'do-backup)
-(asdf:oos 'asdf:load-op 'clon)
+(with-silence
+ (asdf:oos 'asdf:load-op 'do-backup)
+ (asdf:oos 'asdf:load-op 'clon))
 
 (defparameter *name* "do-backup")
 
