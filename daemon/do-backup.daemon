@@ -1,6 +1,6 @@
 ;;;; -*- mode: lisp -*-
 
-(with-silence
+(with-output-to-string (*standard-output*)
  (asdf:oos 'asdf:load-op 'do-backup)
  (asdf:oos 'asdf:load-op 'clon))
 
