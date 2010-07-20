@@ -1,19 +1,17 @@
 ;;;; -*- mode: lisp -*-
 
+(asdf:oos 'asdf:load-op 'do-backup)
+(asdf:oos 'asdf:load-op 'clon)
+
 (defparameter *name* "do-backup")
 
 (defparameter *pidfile* #P"/var/run/do-backup.pid")
 
 (defparameter *start-program*
   #'(lambda ()
-      (asdf:oos 'asdf:load-op 'do-backup)
-      (asdf:oos 'asdf:load-op 'clon)
-      (eval
-       (with-input-from-string (is "
-        (progn
-  	  (clon:schedule-function
- 	   #'(lambda ()
-	       (do-backup:do-backup \"/etc/do-backup.conf\"))
-	   (clon:make-scheduler
-	    (clon:make-typed-cron-schedule :minute 0 :hour 3 :day-of-month '*)) :thread t))")
-	 (read is nil)))))
+      (clon:schedule-function
+       #'(lambda ()
+	   (do-backup:do-backup "/etc/do-backup.conf"))
+       (clon:make-scheduler
+	(clon:make-typed-cron-schedule :minute 0 :hour 3 :day-of-month '*))
+       :thread t)))

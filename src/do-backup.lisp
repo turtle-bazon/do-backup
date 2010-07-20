@@ -76,10 +76,9 @@
     (values status code)))
 
 (defun mail-message (to subject message)
-  (multiple-value-bind (exit-code stream)
-      (run "mail" `("-s" ,subject ,to) :input :stream)
-    (format stream message)
-    (close stream)))
+  (let ((process (start "mail" `("-s" ,subject ,to) :input :stream)))
+    (with-open-stream (process-input (process-input-stream process))
+      (format process-input message))))
 
 (defun call-action (action &optional file files outputstream)
   (let ((program (action-program action))
@@ -193,4 +192,4 @@
     (if (or (not (= (length so) 0))
 	    (not (= (length se) 0)))
 	(mail-message "root" "DO-BACKUP reports"
-		      (format nil "STD: ~a,~& ERR: ~a~&" so se)))))
+		      (format nil "STD:~& ~a,~& ERR:~& ~a~&" so se)))))
