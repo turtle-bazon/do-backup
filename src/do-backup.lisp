@@ -75,6 +75,12 @@
 	(format t "~a, ~a, [~a, ~a]~&" program arguments status code))
     (values status code)))
 
+(defun mail-message (to subject message)
+  (multiple-value-bind (exit-code stream)
+      (run "mail" `("-s" ,subject ,to) :input :stream)
+    (format stream message)
+    (close stream)))
+
 (defun call-action (action &optional file files outputstream)
   (let ((program (action-program action))
 	(arguments (substitute-vars (action-arguments action) file files)))
@@ -174,7 +180,17 @@
 	  (format t "Directory ~a can't be created~%" directory)))))
 
 (defun do-backup (config-location)
-  (let* ((config (read-config config-location))
-	 (actions (parse-actions config)))
-    (dolist (backup (get-values :backup config))
-      (perform-backup backup actions))))
+  (let ((so (make-array '(0) :element-type 'base-char
+			:fill-pointer 0 :adjustable t))
+	(se (make-array '(0) :element-type 'base-char
+			:fill-pointer 0 :adjustable t)))
+    (with-output-to-string (*standard-output* so)
+      (with-output-to-string (*error-output* se)
+	(let* ((config (read-config config-location))
+	       (actions (parse-actions config)))
+	  (dolist (backup (get-values :backup config))
+	    (perform-backup backup actions)))))
+    (if (or (not (= (length so) 0))
+	    (not (= (length se) 0)))
+	(mail-message "root" "DO-BACKUP reports"
+		      (format nil "STD: ~a,~& ERR: ~a~&" so se)))))
