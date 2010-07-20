@@ -8,6 +8,6 @@ Standards-Version: 3.8.2.0
 
 Package: do-backup
 Architecture: all
-Depends: ${misc:Depends}, sbcl-daemon, clon, external-program, external-program-extender, p7zip, coreutils
+Depends: ${misc:Depends}, sbcl-daemon, clon, external-program, external-program-extender, p7zip-full, coreutils
 Description: BACKUP tool
 
