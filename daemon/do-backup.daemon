@@ -4,10 +4,12 @@
 
 (defparameter *start-program*
   #'(lambda ()
-      (asdf:oos 'asdf:load-op 'do-backup)
-      (asdf:oos 'asdf:load-op 'clon)
-      (clon:schedule-function
-       #'(lambda ()
-	   (do-backup:do-backup "/etc/do-backup.conf"))
-       (clon:make-scheduler
-	(clon:make-typed-cron-schedule :minute '*)) :thread t)))
+      (eval
+       '(progn
+	 (asdf:oos 'asdf:load-op 'do-backup)
+	 (asdf:oos 'asdf:load-op 'clon)
+	 (clon:schedule-function
+	  #'(lambda ()
+	      (do-backup:do-backup "/etc/do-backup.conf"))
+	  (clon:make-scheduler
+	   (clon:make-typed-cron-schedule :minute '*)) :thread t)))))
