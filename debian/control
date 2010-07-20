@@ -6,7 +6,7 @@ Build-Depends-Indep: dh-lisp
 Build-Depends: debhelper (>= 7.0.0)
 Standards-Version: 3.8.2.0
 
-Package: do-bakcup
+Package: do-backup
 Architecture: all
 Depends: ${misc:Depends}, sbcl-daemon, clon, external-program, external-program-extender, p7zip, coreutils
 Description: BACKUP tool
