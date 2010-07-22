@@ -14,6 +14,15 @@
 (defun parse-actions (config)
   (get-values :action config))
 
+(defun config-contacts (config)
+  (get-values :contact config))
+
+(defun contact-to (contact)
+  (car (get-value :to contact)))
+
+(defun contact-subject (contact)
+  (car (get-value :subject contact)))
+
 (defun find-action (action actions)
   (get-value action actions))
 
@@ -179,17 +188,19 @@
 	  (format t "Directory ~a can't be created~%" directory)))))
 
 (defun do-backup (config-location)
-  (let ((so (make-array '(0) :element-type 'base-char
-			:fill-pointer 0 :adjustable t))
-	(se (make-array '(0) :element-type 'base-char
-			:fill-pointer 0 :adjustable t)))
+  (let* ((so (make-array '(0) :element-type 'base-char
+			 :fill-pointer 0 :adjustable t))
+	 (se (make-array '(0) :element-type 'base-char
+			 :fill-pointer 0 :adjustable t))
+	 (config (read-config config-location))
+	 (actions (parse-actions config)))
     (with-output-to-string (*standard-output* so)
       (with-output-to-string (*error-output* se)
-	(let* ((config (read-config config-location))
-	       (actions (parse-actions config)))
-	  (dolist (backup (get-values :backup config))
-	    (perform-backup backup actions)))))
-    (if (or (not (= (length so) 0))
-	    (not (= (length se) 0)))
-	(mail-message "root" "DO-BACKUP reports"
-		      (format nil "STD:~& ~a,~& ERR:~& ~a~&" so se)))))
+	(dolist (backup (get-values :backup config))
+	  (perform-backup backup actions))
+	(if (or (not (= (length so) 0))
+		(not (= (length se) 0)))
+	    (dolist (contact (config-contacts config))
+	      (mail-message (contact-to contact)
+			    (contact-subject contact)
+			    (format nil "STD:~& ~a,~& ERR:~& ~a~&" so se))))))))
