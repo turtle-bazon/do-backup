@@ -30,6 +30,7 @@ binary-indep: build
 	dh_install
 	dh_lisp
 	dh_installdocs
+	dh_installinit --noscripts --init-script=do-backup
 	dh_installexamples
 	dh_link --verbose
 	dh_strip
