@@ -3,5 +3,6 @@ set -e
 
 invoke-rc.d do-backup stop > /dev/null
 update-rc.d -f do-backup remove > /dev/null
+rm -rf /var/run/do-backup.pid
 
 #DEBHELPER#
