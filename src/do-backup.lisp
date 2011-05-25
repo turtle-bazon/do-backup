@@ -110,6 +110,14 @@
 	      (call-action action file))
 	  (format t "Null action ~a" actionname)))))
 
+(defun perform-delete-dynamic-files (dynamic-files)
+  (dolist (dynamic-file dynamic-files)
+    (let* ((file (car dynamic-file))
+	   (file-options (cdr dynamic-file))
+	   (preserve (getf file-options :preserve)))
+      (if (not preserve)
+	  (program-run "rm" `("-rf" ,file))))))
+
 (defun perform-preliminary-backup (backup actions directory)
   (let* ((action-name (car (get-value :action backup)))
 	 (action (find-action action-name actions))
@@ -184,6 +192,8 @@
 	    (perform-copy-to-dirs
 	     backup-file
 	     (get-values :output-directory backup))
+	    (perform-delete-dynamic-files
+	     (get-values :dynamic-file backup))
 	    (perform-delete-preliminary-backup directory))
 	  (format t "Directory ~a can't be created~%" directory)))))
 
@@ -216,9 +226,7 @@
 			 :fill-pointer 0 :adjustable t))
 	 (config (read-config config-location))
 	 (actions (parse-actions config)))
-    (with-output-to-string (*standard-output* so)
-      (with-output-to-string (*error-output* se)
-	(dolist (backup (get-values :backup config))
+    (dolist (backup (get-values :backup config))
 	  (handler-case
 	      (if (can-backup? backup)
 		  (perform-backup backup actions)
@@ -228,6 +236,9 @@
 	    (error (condition)
 	      (format *error-output* "Backup: ~a~%Error signalled: ~a~%~%"
 		      backup condition))))
+    (with-output-to-string (*standard-output* so)
+      (with-output-to-string (*error-output* se)
+	
 	(if (or (not (= (length so) 0))
 		(not (= (length se) 0)))
 	    (send-message config
