@@ -1,3 +1,9 @@
+do-backup (0.0.1.1-1) unstable; urgency=low
+
+  * Added error handling and conditions to perform backup.
+
+ -- Azamat S. Kalimoulline <turtle@bazon.ru>  Wed, 25 May 2011 04:05:07 +0400
+
 do-backup (0.0.1.0-3) unstable; urgency=low
 
   * Dependency to asdf.

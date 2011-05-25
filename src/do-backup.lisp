@@ -187,6 +187,28 @@
 	    (perform-delete-preliminary-backup directory))
 	  (format t "Directory ~a can't be created~%" directory)))))
 
+(defun eval-condition (condition)
+  (let ((condition-type (first condition)))
+    (ecase condition-type
+      (:always t)
+      (:never nil)
+      (:and (eval `(and
+		    ,@(loop for c in (rest condition)
+			 collect (eval-condition c)))))
+      (:or (eval `(or
+		   ,@(loop for c in (rest condition)
+			collect (eval-condition c)))))
+      (:fexists (probe-file (second condition))))))
+
+(defun can-backup? (backup)
+  (eval-condition (car (get-value :condition backup))))
+
+(defun send-message (config message)
+  (dolist (contact (config-contacts config))
+    (mail-message (contact-to contact)
+		  (contact-subject contact)
+		  message)))
+
 (defun do-backup (config-location)
   (let* ((so (make-array '(0) :element-type 'base-char
 			 :fill-pointer 0 :adjustable t))
@@ -197,10 +219,16 @@
     (with-output-to-string (*standard-output* so)
       (with-output-to-string (*error-output* se)
 	(dolist (backup (get-values :backup config))
-	  (perform-backup backup actions))
+	  (handler-case
+	      (if (can-backup? backup)
+		  (perform-backup backup actions)
+		  (format *standard-output*
+			  "Condition was false to perform backup: ~a~%~%"
+			  backup))
+	    (error (condition)
+	      (format *error-output* "Backup: ~a~%Error signalled: ~a~%~%"
+		      backup condition))))
 	(if (or (not (= (length so) 0))
 		(not (= (length se) 0)))
-	    (dolist (contact (config-contacts config))
-	      (mail-message (contact-to contact)
-			    (contact-subject contact)
-			    (format nil "STD:~& ~a,~& ERR:~& ~a~&" so se))))))))
+	    (send-message config
+			  (format nil "STD:~% ~a,~% ERR:~% ~a~%" so se)))))))
