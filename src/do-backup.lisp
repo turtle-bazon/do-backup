@@ -226,7 +226,9 @@
 			 :fill-pointer 0 :adjustable t))
 	 (config (read-config config-location))
 	 (actions (parse-actions config)))
-    (dolist (backup (get-values :backup config))
+    (with-output-to-string (*standard-output* so)
+      (with-output-to-string (*error-output* se)
+	(dolist (backup (get-values :backup config))
 	  (handler-case
 	      (if (can-backup? backup)
 		  (perform-backup backup actions)
@@ -236,9 +238,6 @@
 	    (error (condition)
 	      (format *error-output* "Backup: ~a~%Error signalled: ~a~%~%"
 		      backup condition))))
-    (with-output-to-string (*standard-output* so)
-      (with-output-to-string (*error-output* se)
-	
 	(if (or (not (= (length so) 0))
 		(not (= (length se) 0)))
 	    (send-message config
