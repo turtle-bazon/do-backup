@@ -6,10 +6,13 @@
 ;
 ;(defparameter *config-location* "/etc/do-backup.conf")
 
-(defparameter *tmp-directory* "/tmp/")
+(defparameter *tmp-directory* "/tmp")
 
 (defun read-config (file)
   (with-open-file (stream file) (read stream)))
+
+(defun config-tmpdir (config)
+  (get-value :tmpdir config))
 
 (defun parse-actions (config)
   (get-values :action config))
@@ -178,7 +181,8 @@
 	       `("-rf" ,directory)))
 
 (defun perform-backup (backup actions)
-  (let ((tmp-dir (format nil "/tmp/~a.~a/"
+  (let ((tmp-dir (format nil "~a/~a.~a/"
+			 *tmp-directory*
 			 (get-universal-time)
 			 (random 1000))))
     (multiple-value-bind (directory dir-created-p)
@@ -225,7 +229,10 @@
 	 (se (make-array '(0) :element-type 'base-char
 			 :fill-pointer 0 :adjustable t))
 	 (config (read-config config-location))
-	 (actions (parse-actions config)))
+	 (actions (parse-actions config))
+	 (tmpdir (config-tmpdir config)))
+    (if tmpdir
+      (setf *tmp-directory* tmpdir))
     (with-output-to-string (*standard-output* so)
       (with-output-to-string (*error-output* se)
 	(dolist (backup (get-values :backup config))
