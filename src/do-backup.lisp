@@ -12,7 +12,7 @@
   (with-open-file (stream file) (read stream)))
 
 (defun config-tmpdir (config)
-  (get-value :tmpdir config))
+  (first (get-value :tmpdir config)))
 
 (defun parse-actions (config)
   (get-values :action config))
