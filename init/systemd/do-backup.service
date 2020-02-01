@@ -1,0 +1,11 @@
+[Unit]
+Description=DO Backup
+After=syslog.target network.target
+
+[Service]
+ExecStart=/usr/local/sbin/do-backup
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
