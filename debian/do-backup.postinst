@@ -1,8 +1,0 @@
-#!/bin/sh
-set -e
-
-rm -rf /var/run/do-backup.pid
-update-rc.d do-backup defaults > /dev/null
-invoke-rc.d do-backup start > /dev/null
-
-#DEBHELPER#

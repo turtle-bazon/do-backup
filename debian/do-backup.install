@@ -1,3 +1,0 @@
-do-backup.asd src usr/share/common-lisp/source/do-backup/
-do-backup.conf etc/
-do-backup.daemon etc/
